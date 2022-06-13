@@ -15,7 +15,9 @@ using namespace nvinfer1;
 
 class Logger : public nvinfer1::ILogger {
    public:
-    void log(Severity severity, const char* msg) noexcept override {}
+    void log(Severity severity, const char* msg) noexcept override {
+        // std::cout << msg << std::endl;
+    }
 };
 
 class SampleMNIST {
@@ -38,8 +40,8 @@ class SampleMNIST {
     std::unique_ptr<nvcaffeparser1::IBinaryProtoBlob> mMeanBlob;
 };
 
+Logger logger;
 bool SampleMNIST::build() {
-    Logger logger;
     auto builder = std::unique_ptr<nvinfer1::IBuilder>(
         nvinfer1::createInferBuilder(logger));
     auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(
@@ -51,7 +53,7 @@ bool SampleMNIST::build() {
     constructNetwork(parser, network);
 
     builder->setMaxBatchSize(1);
-    config->setMaxWorkspaceSize(16 * 1024 * 1024);
+    config->setMaxWorkspaceSize(1 << 20);
     config->setFlag(nvinfer1::BuilderFlag::kGPU_FALLBACK);
 
     std::unique_ptr<IHostMemory> plan{
@@ -63,7 +65,6 @@ bool SampleMNIST::build() {
         runtime->deserializeCudaEngine(plan->data(), plan->size()));
     mInputDims = network->getInput(0)->getDimensions();
     mOutputDims = network->getOutput(0)->getDimensions();
-
     return true;
 }
 
@@ -99,7 +100,6 @@ bool SampleMNIST::constructNetwork(
         return false;
     }
     network->getLayer(0)->setInput(0, *meanSub->getOutput(0));
-
     return true;
 }
 
@@ -118,6 +118,9 @@ inline void readImage(
 }
 
 bool SampleMNIST::infer() {
+    auto context = std::unique_ptr<nvinfer1::IExecutionContext>(
+        mEngine->createExecutionContext());
+
     int inputSize = std::accumulate(
         mInputDims.d, mInputDims.d + mInputDims.nbDims, 1,
         std::multiplies<int>());
@@ -145,8 +148,6 @@ bool SampleMNIST::infer() {
         deviceInputBuffer, hostInputBuffer, inputSize * sizeof(float),
         cudaMemcpyHostToDevice);
 
-    auto context = std::unique_ptr<nvinfer1::IExecutionContext>(
-        mEngine->createExecutionContext());
     cudaStream_t stream;
     cudaStreamCreate(&stream);
     void* bindings[2] = {
@@ -157,16 +158,19 @@ bool SampleMNIST::infer() {
     cudaMemcpy(
         hostOutputBuffer, deviceOutputBuffer, outputSize * sizeof(float),
         cudaMemcpyDeviceToHost);
-    
+
+    cudaStreamSynchronize(stream);
+    cudaStreamDestroy(stream);
+    for (int i = 0; i < outputSize; i++) {
+        std::cout << ((float*)hostOutputBuffer)[i] << std::endl;
+    }
     return true;
 }
 
 int main(int argc, char** argv) {
     SampleMNIST sample;
-
     sample.build();
     sample.infer();
     sample.teardown();
-
     return 0;
 }
