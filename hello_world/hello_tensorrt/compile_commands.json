@@ -1,0 +1,15 @@
+[
+    {
+        "arguments": [
+            "g++",
+            "-c",
+            "-I",
+            "/opt/anaconda3/envs/cuda-11/include/",
+            "-o",
+            "mnist.o",
+            "mnist.cpp"
+        ],
+        "directory": "/home/sunway/Gitbox/code/hello_world/hello_tensorrt",
+        "file": "mnist.cpp"
+    }
+]
