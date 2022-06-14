@@ -1,12 +1,21 @@
-CPPFLAGS:=-I /opt/anaconda3/envs/cuda-11/include/
-LDFLAGS:=-L/opt/anaconda3/envs/cuda-11/lib -L/opt/anaconda3/envs/cuda-11/lib64
-LDLIBS:=-lnvcaffe_parser -lnvinfer -lcudnn -lcudart -lstdc++
+all:mnist.elf
 
-mnist.elf:mnist.o
+CPPFLAGS:=-I /opt/anaconda3/envs/cuda-11/include/
+CXXFLAGS:=-g -O0 -MMD
+LDFLAGS:= -L/opt/anaconda3/envs/cuda-11/lib -L/opt/anaconda3/envs/cuda-11/lib64 -L/home/sunway/source/TensorRT/build/out
+LDLIBS:=-lnvcaffeparser -lnvinfer -lnvinfer_plugin -lcudnn -lcudart -lstdc++ 
+
+SRC:=mnist.cpp
+OBJ := $(patsubst %.cpp,%.o,${SRC})
+
+DEP := $(OBJ:.o=.d)
+-include $(DEP)
+
+mnist.elf:${OBJ}
 	gcc $^ ${LDFLAGS} ${LDLIBS} -o $@
 
 run:mnist.elf
-	./mnist.elf
+	LD_LIBRARY_PATH="/home/sunway/source/TensorRT/build/out:/opt/anaconda3/envs/cuda-11/lib64:/opt/anaconda3/envs/cuda-11/lib" ./mnist.elf
 
 clean:
-	rm mnist.o mnist.elf
+	rm ${OBJ} mnist.elf

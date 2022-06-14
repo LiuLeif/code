@@ -10,7 +10,8 @@
 
 #include "NvCaffeParser.h"
 #include "NvInfer.h"
-
+#include "NvInferPlugin.h"
+#include "mnist_plugin.h"
 using namespace nvinfer1;
 
 class Logger : public nvinfer1::ILogger {
@@ -41,6 +42,7 @@ class SampleMNIST {
 };
 
 Logger logger;
+
 bool SampleMNIST::build() {
     auto builder = std::unique_ptr<nvinfer1::IBuilder>(
         nvinfer1::createInferBuilder(logger));
@@ -60,7 +62,6 @@ bool SampleMNIST::build() {
         builder->buildSerializedNetwork(*network, *config)};
 
     std::unique_ptr<IRuntime> runtime{createInferRuntime(logger)};
-
     mEngine = std::shared_ptr<nvinfer1::ICudaEngine>(
         runtime->deserializeCudaEngine(plan->data(), plan->size()));
     mInputDims = network->getInput(0)->getDimensions();
@@ -169,6 +170,8 @@ bool SampleMNIST::infer() {
 
 int main(int argc, char** argv) {
     SampleMNIST sample;
+    // initLibNvInferPlugins(&logger, "");
+    REGISTER_TENSORRT_PLUGIN(MnistSoftmaxPluginV2Creator);
     sample.build();
     sample.infer();
     sample.teardown();
