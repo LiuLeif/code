@@ -10,13 +10,13 @@ extern void Softmax(float*, float*, int);
 
 using namespace nvinfer1;
 
-class MnistSoftmaxPluginV2 : public IPluginV2IOExt {
+class MnistSoftmaxPlugin : public IPluginV2IOExt {
    public:
-    MnistSoftmaxPluginV2() { std::cout << __FUNCTION__ << std::endl; }
+    MnistSoftmaxPlugin() { std::cout << __FUNCTION__ << std::endl; }
 
-    MnistSoftmaxPluginV2(const PluginFieldCollection fc) {}
+    MnistSoftmaxPlugin(const PluginFieldCollection fc) {}
 
-    MnistSoftmaxPluginV2(const void* data, size_t length) {}
+    MnistSoftmaxPlugin(const void* data, size_t length) {}
 
    public:
     int getNbOutputs() const noexcept override { return 1; }
@@ -77,7 +77,7 @@ class MnistSoftmaxPluginV2 : public IPluginV2IOExt {
     void destroy() noexcept override { delete this; }
 
     IPluginV2Ext* clone() const noexcept override {
-        auto* plugin = new MnistSoftmaxPluginV2(*this);
+        auto* plugin = new MnistSoftmaxPlugin(*this);
         return plugin;
     }
 
@@ -105,7 +105,7 @@ class MnistSoftmaxPluginV2 : public IPluginV2IOExt {
     std::string mNamespace;
 };
 
-class MnistSoftmaxPluginV2Creator : public IPluginCreator {
+class MnistSoftmaxPluginCreator : public IPluginCreator {
    public:
     const char* getPluginName() const noexcept override { return "SOFTMAX"; }
     const char* getPluginVersion() const noexcept override { return "1"; }
@@ -114,7 +114,7 @@ class MnistSoftmaxPluginV2Creator : public IPluginCreator {
     }
     IPluginV2* createPlugin(
         const char* name, const PluginFieldCollection* fc) noexcept override {
-        auto* plugin = new MnistSoftmaxPluginV2(*fc);
+        auto* plugin = new MnistSoftmaxPlugin(*fc);
         mFieldCollection = *fc;
         mPluginName = name;
         return plugin;
@@ -122,7 +122,7 @@ class MnistSoftmaxPluginV2Creator : public IPluginCreator {
     IPluginV2* deserializePlugin(
         const char* name, const void* serialData,
         size_t serialLength) noexcept override {
-        auto* plugin = new MnistSoftmaxPluginV2(serialData, serialLength);
+        auto* plugin = new MnistSoftmaxPlugin(serialData, serialLength);
         mPluginName = name;
         return plugin;
     }
