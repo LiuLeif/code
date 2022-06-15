@@ -6,30 +6,26 @@
 #include "NvInfer.h"
 #include "NvInferRuntime.h"
 
-extern void Softmax(float*, float*, int);
+extern void Softmax(float*, float*, int, cudaStream_t);
 
 using namespace nvinfer1;
 
-class MnistSoftmaxPlugin : public IPluginV2IOExt {
+class SoftmaxPlugin : public IPluginV2IOExt {
    public:
-    MnistSoftmaxPlugin() { std::cout << __FUNCTION__ << std::endl; }
-
-    MnistSoftmaxPlugin(const PluginFieldCollection fc) {}
-
-    MnistSoftmaxPlugin(const void* data, size_t length) {}
+    SoftmaxPlugin() { std::cout << __FUNCTION__ << std::endl; }
+    SoftmaxPlugin(const PluginFieldCollection fc) {}
+    SoftmaxPlugin(const void* data, size_t length) {}
 
    public:
     int getNbOutputs() const noexcept override { return 1; }
 
     Dims getOutputDimensions(
         int index, const Dims* inputs, int nbInputDims) noexcept override {
-        return Dims4(1, 10, 1, 1);
+        return *inputs;
     }
 
     int initialize() noexcept override { return 0; }
-
     void terminate() noexcept override {}
-
     size_t getWorkspaceSize(int maxBatchSize) const noexcept override {
         return 0;
     }
@@ -40,29 +36,21 @@ class MnistSoftmaxPlugin : public IPluginV2IOExt {
         float* dst = reinterpret_cast<float*>(outputs[0]);
         const float* src = reinterpret_cast<const float*>(inputs[0]);
 
-        Softmax(dst, const_cast<float*>(src), 10);
+        Softmax(dst, const_cast<float*>(src), 10, stream);
         // cudaError_t error = cudaMemcpy(dst, tmp, 40, cudaMemcpyHostToDevice);
         return 0;
     }
 
     size_t getSerializationSize() const noexcept override { return 0; }
-
     void serialize(void* buffer) const noexcept override {}
-
     void configurePlugin(
         const PluginTensorDesc* in, int nbInput, const PluginTensorDesc* out,
         int nbOutput) noexcept override {}
-
-    //! The combination of kLINEAR + kINT8/kHALF/kFLOAT is supported.
     bool supportsFormatCombination(
         int pos, const PluginTensorDesc* inOut, int nbInputs,
         int nbOutputs) const noexcept override {
-        // bool condition = inOut[pos].format == TensorFormat::kLINEAR;
-        // condition &= inOut[pos].type != DataType::kINT32;
-        // condition &= inOut[pos].type == inOut[0].type;
         return inOut[pos].type == DataType::kFLOAT;
     }
-
     DataType getOutputDataType(
         int index, const DataType* inputTypes,
         int nbInputs) const noexcept override {
@@ -71,30 +59,23 @@ class MnistSoftmaxPlugin : public IPluginV2IOExt {
     }
 
     const char* getPluginType() const noexcept override { return "SOFTMAX"; }
-
     const char* getPluginVersion() const noexcept override { return "1"; }
-
     void destroy() noexcept override { delete this; }
-
     IPluginV2Ext* clone() const noexcept override {
-        auto* plugin = new MnistSoftmaxPlugin(*this);
+        auto* plugin = new SoftmaxPlugin(*this);
         return plugin;
     }
-
     void setPluginNamespace(const char* libNamespace) noexcept override {
         mNamespace = libNamespace;
     }
-
     const char* getPluginNamespace() const noexcept override {
         return mNamespace.c_str();
     }
-
     bool isOutputBroadcastAcrossBatch(
         int outputIndex, const bool* inputIsBroadcasted,
         int nbInputs) const noexcept override {
         return false;
     }
-
     bool canBroadcastInputAcrossBatch(int inputIndex) const noexcept override {
         return false;
     }
@@ -105,7 +86,7 @@ class MnistSoftmaxPlugin : public IPluginV2IOExt {
     std::string mNamespace;
 };
 
-class MnistSoftmaxPluginCreator : public IPluginCreator {
+class SoftmaxPluginCreator : public IPluginCreator {
    public:
     const char* getPluginName() const noexcept override { return "SOFTMAX"; }
     const char* getPluginVersion() const noexcept override { return "1"; }
@@ -114,7 +95,7 @@ class MnistSoftmaxPluginCreator : public IPluginCreator {
     }
     IPluginV2* createPlugin(
         const char* name, const PluginFieldCollection* fc) noexcept override {
-        auto* plugin = new MnistSoftmaxPlugin(*fc);
+        auto* plugin = new SoftmaxPlugin(*fc);
         mFieldCollection = *fc;
         mPluginName = name;
         return plugin;
@@ -122,7 +103,7 @@ class MnistSoftmaxPluginCreator : public IPluginCreator {
     IPluginV2* deserializePlugin(
         const char* name, const void* serialData,
         size_t serialLength) noexcept override {
-        auto* plugin = new MnistSoftmaxPlugin(serialData, serialLength);
+        auto* plugin = new SoftmaxPlugin(serialData, serialLength);
         mPluginName = name;
         return plugin;
     }

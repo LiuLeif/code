@@ -1,23 +1,32 @@
 #include <stdio.h>
 
-__global__ void Exp(float* output, float* input) {
-    output[threadIdx.x] = exp(input[threadIdx.x]);
+__global__ void Exp(float* output, float* input, int N) {
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id < N) {
+        output[threadIdx.x] = exp(input[threadIdx.x]);
+    }
 }
 
-__global__ void Divid(float* output, float* sum) {
-    output[threadIdx.x] /= *sum;
+__global__ void Divid(float* output, float* sum, int N) {
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id < N) {
+        output[threadIdx.x] /= *sum;
+    }
 }
 
-__global__ void Sum(float* data, float* result) {
-    int id = threadIdx.x;
-    atomicAdd(result, data[id]);
+__global__ void Sum(float* data, float* result, int N) {
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id < N) {
+        atomicAdd(result, data[id]);
+    }
 }
 
-void Softmax(float* output, float* input, int N) {
+void Softmax(float* output, float* input, int N, cudaStream_t stream) {
     float* sum;
     cudaMalloc(&sum, sizeof(float));
-    Exp<<<1, N>>>(output, input);
-    Sum<<<1, N>>>(output, sum);
-    Divid<<<1, N>>>(output, sum);
+    int block = int(N / 128) + 1;
+    Exp<<<block, 128, 0, stream>>>(output, input, N);
+    Sum<<<block, 128, 0, stream>>>(output, sum, N);
+    Divid<<<block, 128, 0, stream>>>(output, sum, N);
     cudaFree(sum);
 }
