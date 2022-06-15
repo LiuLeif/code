@@ -11,7 +11,13 @@ OBJ := $(patsubst %.cpp,%.o,${SRC})
 DEP := $(OBJ:.o=.d)
 -include $(DEP)
 
-mnist.elf:${OBJ}
+CUDA_KERNEL_SRC:=$(wildcard *.cu)
+CUDA_OBJ := $(patsubst %.cu,%.o,${CUDA_KERNEL_SRC})
+
+%.o:%.cu
+	nvcc -c $^ -o $@
+
+mnist.elf:${OBJ} ${CUDA_OBJ}
 	gcc $^ ${LDFLAGS} ${LDLIBS} -o $@
 
 run:mnist.elf

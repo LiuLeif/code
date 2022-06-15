@@ -156,10 +156,9 @@ bool SampleMNIST::infer() {
         deviceOutputBuffer,
     };
     context->enqueue(1, bindings, stream, nullptr);
-    cudaMemcpy(
+    cudaError_t error = cudaMemcpy(
         hostOutputBuffer, deviceOutputBuffer, outputSize * sizeof(float),
         cudaMemcpyDeviceToHost);
-
     cudaStreamSynchronize(stream);
     cudaStreamDestroy(stream);
     for (int i = 0; i < outputSize; i++) {
@@ -169,9 +168,8 @@ bool SampleMNIST::infer() {
 }
 
 int main(int argc, char** argv) {
-    SampleMNIST sample;
-    // initLibNvInferPlugins(&logger, "");
     REGISTER_TENSORRT_PLUGIN(MnistSoftmaxPluginV2Creator);
+    SampleMNIST sample;
     sample.build();
     sample.infer();
     sample.teardown();

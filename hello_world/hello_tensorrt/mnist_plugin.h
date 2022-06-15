@@ -6,6 +6,8 @@
 #include "NvInfer.h"
 #include "NvInferRuntime.h"
 
+extern void Softmax(float*, float*, int);
+
 using namespace nvinfer1;
 
 class MnistSoftmaxPluginV2 : public IPluginV2IOExt {
@@ -21,7 +23,7 @@ class MnistSoftmaxPluginV2 : public IPluginV2IOExt {
 
     Dims getOutputDimensions(
         int index, const Dims* inputs, int nbInputDims) noexcept override {
-        return Dims3(10, 1, 1);
+        return Dims4(1, 10, 1, 1);
     }
 
     int initialize() noexcept override { return 0; }
@@ -29,20 +31,21 @@ class MnistSoftmaxPluginV2 : public IPluginV2IOExt {
     void terminate() noexcept override {}
 
     size_t getWorkspaceSize(int maxBatchSize) const noexcept override {
-        return 1 << 10;
+        return 0;
     }
 
     int enqueue(
         int batchSize, const void* const* inputs, void* const* outputs,
         void* workspace, cudaStream_t stream) noexcept override {
-        for (int i = 0; i < 10; i++) {
-            // printf("%f\n", ((float*)inputs)[i]);
-            ((float*)outputs)[i] = 1.0;
-        }
+        float* dst = reinterpret_cast<float*>(outputs[0]);
+        const float* src = reinterpret_cast<const float*>(inputs[0]);
+
+        Softmax(dst, const_cast<float*>(src), 10);
+        // cudaError_t error = cudaMemcpy(dst, tmp, 40, cudaMemcpyHostToDevice);
         return 0;
     }
 
-    size_t getSerializationSize() const noexcept override { return 16; }
+    size_t getSerializationSize() const noexcept override { return 0; }
 
     void serialize(void* buffer) const noexcept override {}
 
@@ -111,7 +114,6 @@ class MnistSoftmaxPluginV2Creator : public IPluginCreator {
     }
     IPluginV2* createPlugin(
         const char* name, const PluginFieldCollection* fc) noexcept override {
-        std::cout << "sunway: createPlugin" << std::endl;
         auto* plugin = new MnistSoftmaxPluginV2(*fc);
         mFieldCollection = *fc;
         mPluginName = name;
