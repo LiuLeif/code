@@ -12,6 +12,7 @@
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
 #include "power_plugin.h"
+#include "relu_plugin.h"
 #include "softmax_plugin.h"
 
 using namespace nvinfer1;
@@ -173,6 +174,7 @@ bool SampleMNIST::infer() {
 int main(int argc, char** argv) {
     REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
     SampleMNIST sample;
     sample.build();
     sample.infer();

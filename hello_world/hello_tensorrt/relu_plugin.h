@@ -7,15 +7,15 @@
 #include "NvInfer.h"
 #include "NvInferRuntime.h"
 
-extern void Softmax(float*, float*, int, cudaStream_t);
+extern void Relu(float*, float*, int, cudaStream_t);
 
 using namespace nvinfer1;
 
-class SoftmaxPlugin : public IPluginV2IOExt {
+class ReluPlugin : public IPluginV2IOExt {
    public:
-    SoftmaxPlugin() { std::cout << __FUNCTION__ << std::endl; }
-    SoftmaxPlugin(const PluginFieldCollection fc) {}
-    SoftmaxPlugin(const void* data, size_t length) {
+    ReluPlugin() { std::cout << __FUNCTION__ << std::endl; }
+    ReluPlugin(const PluginFieldCollection fc) {}
+    ReluPlugin(const void* data, size_t length) {
         mInputSize = ((int*)data)[0];
     }
 
@@ -38,7 +38,7 @@ class SoftmaxPlugin : public IPluginV2IOExt {
         void* workspace, cudaStream_t stream) noexcept override {
         float* dst = reinterpret_cast<float*>(outputs[0]);
         const float* src = reinterpret_cast<const float*>(inputs[0]);
-        Softmax(dst, const_cast<float*>(src), mInputSize, stream);
+        Relu(dst, const_cast<float*>(src), mInputSize, stream);
         return 0;
     }
 
@@ -66,11 +66,11 @@ class SoftmaxPlugin : public IPluginV2IOExt {
         return inputTypes[0];
     }
 
-    const char* getPluginType() const noexcept override { return "SOFTMAX"; }
+    const char* getPluginType() const noexcept override { return "RELU"; }
     const char* getPluginVersion() const noexcept override { return "1"; }
     void destroy() noexcept override { delete this; }
     IPluginV2Ext* clone() const noexcept override {
-        auto* plugin = new SoftmaxPlugin(*this);
+        auto* plugin = new ReluPlugin(*this);
         return plugin;
     }
     void setPluginNamespace(const char* libNamespace) noexcept override {
@@ -93,16 +93,16 @@ class SoftmaxPlugin : public IPluginV2IOExt {
     std::string mNamespace;
 };
 
-class SoftmaxPluginCreator : public IPluginCreator {
+class ReluPluginCreator : public IPluginCreator {
    public:
-    const char* getPluginName() const noexcept override { return "SOFTMAX"; }
+    const char* getPluginName() const noexcept override { return "RELU"; }
     const char* getPluginVersion() const noexcept override { return "1"; }
     const PluginFieldCollection* getFieldNames() noexcept override {
         return &mFieldCollection;
     }
     IPluginV2* createPlugin(
         const char* name, const PluginFieldCollection* fc) noexcept override {
-        auto* plugin = new SoftmaxPlugin(*fc);
+        auto* plugin = new ReluPlugin(*fc);
         mFieldCollection = *fc;
         mPluginName = name;
         return plugin;
@@ -110,7 +110,7 @@ class SoftmaxPluginCreator : public IPluginCreator {
     IPluginV2* deserializePlugin(
         const char* name, const void* serialData,
         size_t serialLength) noexcept override {
-        auto* plugin = new SoftmaxPlugin(serialData, serialLength);
+        auto* plugin = new ReluPlugin(serialData, serialLength);
         mPluginName = name;
         return plugin;
     }

@@ -1,5 +1,5 @@
-2 files changed, 33 insertions(+)
-parsers/caffe/caffeParser/caffeParser.cpp | 32 +++++++++++++++++++++++++++++++
+2 files changed, 37 insertions(+)
+parsers/caffe/caffeParser/caffeParser.cpp | 36 +++++++++++++++++++++++++++++++
 parsers/caffe/caffeParser/caffeParser.h   |  1 +
 
 modified   parsers/caffe/caffeParser/caffeParser.cpp
@@ -33,7 +33,7 @@ modified   parsers/caffe/caffeParser/caffeParser.cpp
  const IBlobNameToTensor* CaffeParser::parseBuffers(const uint8_t* deployBuffer,
                                                     std::size_t deployLength,
                                                     const uint8_t* modelBuffer,
-@@ -498,6 +521,15 @@ const IBlobNameToTensor* CaffeParser::parse(INetworkDefinition& network,
+@@ -498,6 +521,19 @@ const IBlobNameToTensor* CaffeParser::parse(INetworkDefinition& network,
                      pluginName = "RPROI_TRT";
                      f = parseRPROIParam(layerMsg, weights, *mBlobNameToTensor);
                  }
@@ -45,6 +45,10 @@ modified   parsers/caffe/caffeParser/caffeParser.cpp
 +                {
 +                    pluginName = "POWER";
 +                    f = parsePowerParam(layerMsg, weights, *mBlobNameToTensor);
++                }
++                else if (layerMsg.type() == "ReLU")
++                {
++                    pluginName = "RELU";
 +                }
  
                  if (mPluginRegistry.find(pluginName) != mPluginRegistry.end())
