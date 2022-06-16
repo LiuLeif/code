@@ -59,6 +59,7 @@ class PowerPlugin : public IPluginV2IOExt {
         const float* src = reinterpret_cast<const float*>(inputs[0]);
 
         // cudaMemcpy(dst, src, 40, cudaMemcpyDeviceToDevice);
+        std::cout << mInputSize << std::endl;
         Power(dst, src, mScale, mPower, mShift, mInputSize, stream);
         return 0;
     }

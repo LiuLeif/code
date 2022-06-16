@@ -171,8 +171,8 @@ bool SampleMNIST::infer() {
 }
 
 int main(int argc, char** argv) {
-    REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
-    REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
+    // REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
+    // REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
     SampleMNIST sample;
     sample.build();
     sample.infer();
