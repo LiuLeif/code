@@ -1,0 +1,24 @@
+g++ -g -O0 -MMD -I /opt/anaconda3/envs/cuda-11/include/  -c -o mnist.o mnist.cpp
+In file included from /opt/anaconda3/envs/cuda-11/include/NvInferLegacyDims.h:53,
+                 from /opt/anaconda3/envs/cuda-11/include/NvInfer.h:53,
+                 from /opt/anaconda3/envs/cuda-11/include/NvCaffeParser.h:53,
+                 from mnist.cpp:11:
+/opt/anaconda3/envs/cuda-11/include/NvInferRuntimeCommon.h: In member function ‘virtual bool nvinfer1::IGpuAllocator::deallocate(void*)’:
+/opt/anaconda3/envs/cuda-11/include/NvInferRuntimeCommon.h:1484:26: warning: ‘virtual void nvinfer1::IGpuAllocator::free(void*)’ is deprecated [-Wdeprecated-declarations]
+ 1484 |         this->free(memory);
+      |                          ^
+/opt/anaconda3/envs/cuda-11/include/NvInferRuntimeCommon.h:1415:33: note: declared here
+ 1415 |     TRT_DEPRECATED virtual void free(void* const memory) noexcept = 0;
+      |                                 ^~~~
+In file included from /opt/anaconda3/envs/cuda-11/include/NvCaffeParser.h:53,
+                 from mnist.cpp:11:
+/opt/anaconda3/envs/cuda-11/include/NvInfer.h: At global scope:
+/opt/anaconda3/envs/cuda-11/include/NvInfer.h:6664:101: warning: ‘IRNNv2Layer’ is deprecated [-Wdeprecated-declarations]
+ 6664 |         ITensor& input, int32_t layerCount, int32_t hiddenSize, int32_t maxSeqLen, RNNOperation op) noexcept
+      |                                                                                                     ^~~~~~~~
+/opt/anaconda3/envs/cuda-11/include/NvInfer.h:3252:22: note: declared here
+ 3252 | class TRT_DEPRECATED IRNNv2Layer : public ILayer
+      |                      ^~~~~~~~~~~
+gcc mnist.o softmax.o power.o -L/opt/anaconda3/envs/cuda-11/lib -L/opt/anaconda3/envs/cuda-11/lib64 -L/home/sunway/source/TensorRT/build/out -lnvcaffeparser -lnvinfer -lnvinfer_plugin -lcudnn -lcudart -lstdc++  -o mnist.elf
+LD_LIBRARY_PATH="/home/sunway/source/TensorRT/build/out:/opt/anaconda3/envs/cuda-11/lib64:/opt/anaconda3/envs/cuda-11/lib" ./mnist.elf
+make: *** [Makefile:24: run] Terminated

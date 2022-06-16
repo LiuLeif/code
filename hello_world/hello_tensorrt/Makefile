@@ -9,7 +9,7 @@ SRC:=mnist.cpp
 OBJ := $(patsubst %.cpp,%.o,${SRC})
 
 DEP := $(OBJ:.o=.d)
--include $(DEP)
+-include ${DEP}
 
 CUDA_KERNEL_SRC:=$(wildcard *.cu)
 CUDA_OBJ := $(patsubst %.cu,%.o,${CUDA_KERNEL_SRC})
@@ -25,3 +25,4 @@ run:mnist.elf
 
 clean:
 	rm ${OBJ} mnist.elf
+	rm ${DEP}

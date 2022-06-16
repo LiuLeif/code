@@ -1,17 +1,6 @@
 [
     {
         "arguments": [
-            "nvcc",
-            "-c",
-            "-o",
-            "softmax.o",
-            "softmax.cu"
-        ],
-        "directory": "/home/sunway/Gitbox/code/hello_world/hello_tensorrt",
-        "file": "softmax.cu"
-    },
-    {
-        "arguments": [
             "g++",
             "-c",
             "-g",

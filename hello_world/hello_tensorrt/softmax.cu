@@ -3,14 +3,14 @@
 __global__ void Exp(float* output, float* input, int N) {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id < N) {
-        output[threadIdx.x] = exp(input[threadIdx.x]);
+        output[id] = exp(input[id]);
     }
 }
 
 __global__ void Divid(float* output, float* sum, int N) {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id < N) {
-        output[threadIdx.x] /= *sum;
+        output[id] /= *sum;
     }
 }
 

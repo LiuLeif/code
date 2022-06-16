@@ -11,7 +11,9 @@
 #include "NvCaffeParser.h"
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
-#include "mnist_plugin.h"
+#include "power_plugin.h"
+#include "softmax_plugin.h"
+
 using namespace nvinfer1;
 
 class Logger : public nvinfer1::ILogger {
@@ -76,7 +78,7 @@ bool SampleMNIST::constructNetwork(
         "mnist.prototxt", "mnist.caffemodel", *network,
         nvinfer1::DataType::kFLOAT);
 
-    network->markOutput(*blobNameToTensor->find("prob"));
+    network->markOutput(*blobNameToTensor->find("scale"));
 
     nvinfer1::Dims inputDims = network->getInput(0)->getDimensions();
     mMeanBlob = std::unique_ptr<nvcaffeparser1::IBinaryProtoBlob>(
@@ -161,6 +163,7 @@ bool SampleMNIST::infer() {
         cudaMemcpyDeviceToHost);
     cudaStreamSynchronize(stream);
     cudaStreamDestroy(stream);
+    printf("output:\n");
     for (int i = 0; i < outputSize; i++) {
         std::cout << ((float*)hostOutputBuffer)[i] << std::endl;
     }
@@ -169,6 +172,7 @@ bool SampleMNIST::infer() {
 
 int main(int argc, char** argv) {
     REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
     SampleMNIST sample;
     sample.build();
     sample.infer();
