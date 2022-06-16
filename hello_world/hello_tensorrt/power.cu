@@ -1,10 +1,11 @@
 #include <stdio.h>
 
 __global__ void PowerKernel(
-    float* output, const float* input, float scale, float power, float shift, int N) {
+    float* output, const float* input, float scale, float power, float shift,
+    int N) {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id < N) {
-        output[id] =  scale * input[id];
+        output[id] = pow(shift + scale * input[id], power);
     }
 }
 

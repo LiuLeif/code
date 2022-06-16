@@ -78,7 +78,7 @@ bool SampleMNIST::constructNetwork(
         "mnist.prototxt", "mnist.caffemodel", *network,
         nvinfer1::DataType::kFLOAT);
 
-    network->markOutput(*blobNameToTensor->find("scale"));
+    network->markOutput(*blobNameToTensor->find("prob"));
 
     nvinfer1::Dims inputDims = network->getInput(0)->getDimensions();
     mMeanBlob = std::unique_ptr<nvcaffeparser1::IBinaryProtoBlob>(
@@ -171,8 +171,8 @@ bool SampleMNIST::infer() {
 }
 
 int main(int argc, char** argv) {
-    // REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
-    // REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
     SampleMNIST sample;
     sample.build();
     sample.infer();

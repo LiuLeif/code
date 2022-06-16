@@ -34,6 +34,7 @@ class PowerPlugin : public IPluginV2IOExt {
         mPower = ((float*)data)[0];
         mShift = ((float*)data)[1];
         mScale = ((float*)data)[2];
+        mInputSize = ((int*)data)[3];
     }
 
    public:
@@ -41,8 +42,6 @@ class PowerPlugin : public IPluginV2IOExt {
 
     Dims getOutputDimensions(
         int index, const Dims* inputs, int nbInputDims) noexcept override {
-        mInputSize = std::accumulate(
-            inputs->d, inputs->d + inputs->nbDims, 1, std::multiplies<int>());
         return *inputs;
     }
 
@@ -57,22 +56,25 @@ class PowerPlugin : public IPluginV2IOExt {
         void* workspace, cudaStream_t stream) noexcept override {
         float* dst = reinterpret_cast<float*>(outputs[0]);
         const float* src = reinterpret_cast<const float*>(inputs[0]);
-
-        // cudaMemcpy(dst, src, 40, cudaMemcpyDeviceToDevice);
-        std::cout << mInputSize << std::endl;
         Power(dst, src, mScale, mPower, mShift, mInputSize, stream);
         return 0;
     }
 
-    size_t getSerializationSize() const noexcept override { return 12; }
+    size_t getSerializationSize() const noexcept override { return 16; }
     void serialize(void* buffer) const noexcept override {
         ((float*)buffer)[0] = mPower;
         ((float*)buffer)[1] = mShift;
         ((float*)buffer)[2] = mScale;
+        ((int*)buffer)[3] = mInputSize;
     }
     void configurePlugin(
         const PluginTensorDesc* in, int nbInput, const PluginTensorDesc* out,
-        int nbOutput) noexcept override {}
+        int nbOutput) noexcept override {
+        auto dims = in[0].dims;
+        mInputSize = std::accumulate(
+            dims.d, dims.d + dims.nbDims, 1, std::multiplies<int>());
+    }
+
     bool supportsFormatCombination(
         int pos, const PluginTensorDesc* inOut, int nbInputs,
         int nbOutputs) const noexcept override {
