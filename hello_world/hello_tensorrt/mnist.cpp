@@ -11,6 +11,7 @@
 #include "NvCaffeParser.h"
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
+#include "pooling_plugin.h"
 #include "power_plugin.h"
 #include "relu_plugin.h"
 #include "softmax_plugin.h"
@@ -175,6 +176,7 @@ int main(int argc, char** argv) {
     REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
     REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
     SampleMNIST sample;
     sample.build();
     sample.infer();

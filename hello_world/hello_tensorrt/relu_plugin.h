@@ -13,7 +13,6 @@ using namespace nvinfer1;
 
 class ReluPlugin : public IPluginV2IOExt {
    public:
-    ReluPlugin() { std::cout << __FUNCTION__ << std::endl; }
     ReluPlugin(const PluginFieldCollection fc) {}
     ReluPlugin(const void* data, size_t length) {
         mInputSize = ((int*)data)[0];

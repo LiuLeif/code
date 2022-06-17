@@ -13,7 +13,6 @@ using namespace nvinfer1;
 
 class SoftmaxPlugin : public IPluginV2IOExt {
    public:
-    SoftmaxPlugin() { std::cout << __FUNCTION__ << std::endl; }
     SoftmaxPlugin(const PluginFieldCollection fc) {}
     SoftmaxPlugin(const void* data, size_t length) {
         mInputSize = ((int*)data)[0];
