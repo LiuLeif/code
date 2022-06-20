@@ -11,6 +11,7 @@
 #include "NvCaffeParser.h"
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
+#include "inner_product_plugin.h"
 #include "pooling_plugin.h"
 #include "power_plugin.h"
 #include "relu_plugin.h"
@@ -21,7 +22,7 @@ using namespace nvinfer1;
 class Logger : public nvinfer1::ILogger {
    public:
     void log(Severity severity, const char* msg) noexcept override {
-        // std::cout << msg << std::endl;
+        std::cout << msg << std::endl;
     }
 };
 
@@ -177,6 +178,7 @@ int main(int argc, char** argv) {
     REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
     REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
     SampleMNIST sample;
     sample.build();
     sample.infer();
