@@ -11,6 +11,7 @@
 #include "NvCaffeParser.h"
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
+#include "convolution_plugin.h"
 #include "inner_product_plugin.h"
 #include "pooling_plugin.h"
 #include "power_plugin.h"
@@ -22,7 +23,7 @@ using namespace nvinfer1;
 class Logger : public nvinfer1::ILogger {
    public:
     void log(Severity severity, const char* msg) noexcept override {
-        std::cout << msg << std::endl;
+        // std::cout << msg << std::endl;
     }
 };
 
@@ -62,6 +63,7 @@ bool SampleMNIST::build() {
     builder->setMaxBatchSize(1);
     config->setMaxWorkspaceSize(1 << 20);
     config->setFlag(nvinfer1::BuilderFlag::kGPU_FALLBACK);
+    // config->setFlag(BuilderFlag::kINT8);
 
     std::unique_ptr<IHostMemory> plan{
         builder->buildSerializedNetwork(*network, *config)};
@@ -74,6 +76,39 @@ bool SampleMNIST::build() {
     return true;
 }
 
+inline void setAllDynamicRanges(
+    INetworkDefinition* network, float inRange = 2.0f, float outRange = 4.0f) {
+    // Ensure that all layer inputs have a scale.
+    for (int i = 0; i < network->getNbLayers(); i++) {
+        auto layer = network->getLayer(i);
+        for (int j = 0; j < layer->getNbInputs(); j++) {
+            ITensor* input{layer->getInput(j)};
+            // Optional inputs are nullptr here and are from RNN layers.
+            if (input != nullptr && !input->dynamicRangeIsSet()) {
+                input->setDynamicRange(-inRange, inRange);
+            }
+        }
+    }
+
+    // Ensure that all layer outputs have a scale.
+    // Tensors that are also inputs to layers are ingored here
+    // since the previous loop nest assigned scales to them.
+    for (int i = 0; i < network->getNbLayers(); i++) {
+        auto layer = network->getLayer(i);
+        for (int j = 0; j < layer->getNbOutputs(); j++) {
+            ITensor* output{layer->getOutput(j)};
+            // Optional outputs are nullptr here and are from RNN layers.
+            if (output != nullptr && !output->dynamicRangeIsSet()) {
+                // Pooling must have the same input and output scales.
+                if (layer->getType() == LayerType::kPOOLING) {
+                    output->setDynamicRange(-inRange, inRange);
+                } else {
+                    output->setDynamicRange(-outRange, outRange);
+                }
+            }
+        }
+    }
+}
 bool SampleMNIST::constructNetwork(
     std::unique_ptr<nvcaffeparser1::ICaffeParser>& parser,
     std::unique_ptr<nvinfer1::INetworkDefinition>& network) {
@@ -106,6 +141,7 @@ bool SampleMNIST::constructNetwork(
         return false;
     }
     network->getLayer(0)->setInput(0, *meanSub->getOutput(0));
+    // setAllDynamicRanges(network.get(), 127.0f, 127.0f);
     return true;
 }
 
@@ -179,6 +215,7 @@ int main(int argc, char** argv) {
     REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
     REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
     SampleMNIST sample;
     sample.build();
     sample.infer();
