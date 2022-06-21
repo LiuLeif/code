@@ -204,8 +204,9 @@ bool SampleMNIST::infer() {
     cudaStreamDestroy(stream);
     printf("output:\n");
     for (int i = 0; i < outputSize; i++) {
-        std::cout << ((float*)hostOutputBuffer)[i] << std::endl;
+        std::cout << ((float*)hostOutputBuffer)[i] << " ";
     }
+    std::cout << std::endl;
     return true;
 }
 

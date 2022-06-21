@@ -9,13 +9,8 @@ __global__ void ConvKernel(
     int output_y = blockIdx.y * blockDim.y + threadIdx.y;
     int output_c = threadIdx.z;
 
-    if (output_c > output_channel) {
-        return;
-    }
-    if (output_x > output_h) {
-        return;
-    }
-    if (output_y > output_w) {
+    if (output_c >= output_channel || output_x >= output_h ||
+        output_y >= output_w) {
         return;
     }
     // input channel: 1 output channel: 20 h: 28 w: 28 kernel: 5 5 stride: 1 1
