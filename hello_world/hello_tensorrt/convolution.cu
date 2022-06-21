@@ -54,14 +54,11 @@ void Convolution(
     int output_h = (h - kernel_h) / stride_h + 1;
     int output_w = (w - kernel_w) / stride_w + 1;
 
-    int threads = 3;
-
-    int block_x = (int)(output_h / threads) + 1;
-    int block_y = (int)(output_w / threads) + 1;
+    int block_x = output_h + 1;
+    int block_y = output_w + 1;
 
     ConvKernel<<<
-        dim3(block_x, block_y), dim3(threads, threads, output_channel), 0,
-        stream>>>(
+        dim3(block_x, block_y), dim3(1, 1, output_channel), 0, stream>>>(
         dst, src, input_channel, output_channel, h, w, kernel_h, kernel_w,
         stride_h, stride_w, output_h, output_w, kernelWeights, biasWeights);
 }
