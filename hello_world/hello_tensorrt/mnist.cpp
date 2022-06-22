@@ -119,14 +119,14 @@ bool SampleMNIST::constructNetwork(
     std::unique_ptr<nvcaffeparser1::ICaffeParser>& parser,
     std::unique_ptr<nvinfer1::INetworkDefinition>& network) {
     const nvcaffeparser1::IBlobNameToTensor* blobNameToTensor = parser->parse(
-        "mnist.prototxt", "mnist.caffemodel", *network,
+        "model/mnist.prototxt", "model/mnist.caffemodel", *network,
         nvinfer1::DataType::kFLOAT);
 
     network->markOutput(*blobNameToTensor->find("prob"));
 
     nvinfer1::Dims inputDims = network->getInput(0)->getDimensions();
     mMeanBlob = std::unique_ptr<nvcaffeparser1::IBinaryProtoBlob>(
-        parser->parseBinaryProto("mnist_mean.binaryproto"));
+        parser->parseBinaryProto("model/mnist_mean.binaryproto"));
     nvinfer1::Weights meanWeights{
         nvinfer1::DataType::kFLOAT, mMeanBlob->getData(),
         inputDims.d[1] * inputDims.d[2]};
@@ -197,7 +197,7 @@ bool SampleMNIST::infer() {
     const int inputW = mInputDims.d[2];
 
     std::vector<uint8_t> imageData(inputH * inputW);
-    readImage("0.pgm", imageData.data(), inputH, inputW);
+    readImage("data/0.pgm", imageData.data(), inputH, inputW);
 
     for (int i = 0; i < inputH * inputW; i++) {
         ((float*)hostInputBuffer)[i] = float(imageData[i]);

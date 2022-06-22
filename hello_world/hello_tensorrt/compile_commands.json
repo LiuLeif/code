@@ -7,11 +7,12 @@
             "-O0",
             "-I",
             "/opt/anaconda3/envs/cuda-11/include/",
+            "-I/usr/include/opencv4",
             "-o",
-            "mnist.o",
-            "mnist.cpp"
+            "googlenet.o",
+            "googlenet.cpp"
         ],
         "directory": "/home/sunway/Gitbox/code/hello_world/hello_tensorrt",
-        "file": "mnist.cpp"
+        "file": "googlenet.cpp"
     }
 ]
