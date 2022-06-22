@@ -1,9 +1,10 @@
 all:mnist.elf
 
-CPPFLAGS:=-I /opt/anaconda3/envs/cuda-11/include/
-CXXFLAGS:=-g -O0 -MMD
-LDFLAGS:= -L/opt/anaconda3/envs/cuda-11/lib -L/opt/anaconda3/envs/cuda-11/lib64 -L/home/sunway/source/TensorRT/build/out
-LDLIBS:=-lnvcaffeparser -lnvinfer -lnvinfer_plugin -lcudnn -lcudart -lstdc++
+CPPFLAGS := -I /opt/anaconda3/envs/cuda-11/include/
+# CPPFLAGS += -DINT8
+CXXFLAGS := -g -O0 -MMD
+LDFLAGS := -L/opt/anaconda3/envs/cuda-11/lib -L/opt/anaconda3/envs/cuda-11/lib64 -L/home/sunway/source/TensorRT/build/out
+LDLIBS := -lnvcaffeparser -lnvinfer -lnvinfer_plugin -lcudnn -lcudart -lstdc++
 
 SRC:=mnist.cpp
 OBJ := $(patsubst %.cpp,%.o,${SRC})

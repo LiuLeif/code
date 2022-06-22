@@ -23,7 +23,7 @@ using namespace nvinfer1;
 class Logger : public nvinfer1::ILogger {
    public:
     void log(Severity severity, const char* msg) noexcept override {
-        // std::cout << msg << std::endl;
+        std::cout << msg << std::endl;
     }
 };
 
@@ -63,7 +63,10 @@ bool SampleMNIST::build() {
     builder->setMaxBatchSize(1);
     config->setMaxWorkspaceSize(1 << 20);
     config->setFlag(nvinfer1::BuilderFlag::kGPU_FALLBACK);
-    // config->setFlag(BuilderFlag::kINT8);
+#ifdef INT8
+    config->setFlag(BuilderFlag::kINT8);
+    config->setFlag(BuilderFlag::kOBEY_PRECISION_CONSTRAINTS);
+#endif
 
     std::unique_ptr<IHostMemory> plan{
         builder->buildSerializedNetwork(*network, *config)};
@@ -76,6 +79,7 @@ bool SampleMNIST::build() {
     return true;
 }
 
+#ifdef INT8
 inline void setAllDynamicRanges(
     INetworkDefinition* network, float inRange = 2.0f, float outRange = 4.0f) {
     // Ensure that all layer inputs have a scale.
@@ -109,6 +113,8 @@ inline void setAllDynamicRanges(
         }
     }
 }
+#endif
+
 bool SampleMNIST::constructNetwork(
     std::unique_ptr<nvcaffeparser1::ICaffeParser>& parser,
     std::unique_ptr<nvinfer1::INetworkDefinition>& network) {
@@ -125,7 +131,7 @@ bool SampleMNIST::constructNetwork(
         nvinfer1::DataType::kFLOAT, mMeanBlob->getData(),
         inputDims.d[1] * inputDims.d[2]};
 
-    float maxMean = 0.0;
+    float maxMean = 255.0;
 
     auto mean = network->addConstant(
         nvinfer1::Dims3(1, inputDims.d[1], inputDims.d[2]), meanWeights);
@@ -141,7 +147,17 @@ bool SampleMNIST::constructNetwork(
         return false;
     }
     network->getLayer(0)->setInput(0, *meanSub->getOutput(0));
-    // setAllDynamicRanges(network.get(), 127.0f, 127.0f);
+#ifdef INT8
+    setAllDynamicRanges(network.get(), 127.0f, 127.0f);
+
+    // int8 for conv
+    for (int i = 0; i < network->getNbLayers(); i++) {
+        auto layer = network->getLayer(i);
+        if (std::string(layer->getName()).find("conv1") == 0) {
+            layer->setPrecision(DataType::kINT8);
+        }
+    }
+#endif
     return true;
 }
 
@@ -211,12 +227,16 @@ bool SampleMNIST::infer() {
 }
 
 int main(int argc, char** argv) {
+#ifdef INT8
+    REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
+#else
     REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
     REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
     REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
     REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
+#endif
     SampleMNIST sample;
     sample.build();
     sample.infer();

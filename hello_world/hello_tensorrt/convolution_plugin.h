@@ -12,6 +12,10 @@ extern void Convolution(
     float*, const float*, int, int, int, int, int, int, int, int, int, int,
     float*, float*, cudaStream_t);
 
+extern void ConvolutionInt8(
+    int8_t*, const int8_t*, int, int, int, int, int, int, int, int, int, int,
+    int, int, float*, float*, cudaStream_t);
+
 using namespace nvinfer1;
 
 class ConvolutionPlugin : public IPluginV2IOExt {
@@ -63,10 +67,13 @@ class ConvolutionPlugin : public IPluginV2IOExt {
 
         int kc = ((int*)data)[10];
         int bc = ((int*)data)[11];
+        mType = ((int*)data)[12];
+        mInputScale = ((int*)data)[13];
+        mOutputScale = ((int*)data)[14];
         float* kernel = (float*)malloc(kc * 4);
         float* bias = (float*)malloc(bc * 4);
-        memcpy(kernel, ((int*)data) + 12, kc * 4);
-        memcpy(bias, ((int*)data) + 12 + kc, bc * 4);
+        memcpy(kernel, ((int*)data) + 15, kc * 4);
+        memcpy(bias, ((int*)data) + 15 + kc, bc * 4);
         mKernelWeights = Weights{
             .type = DataType::kFLOAT,
             .values = kernel,
@@ -105,18 +112,30 @@ class ConvolutionPlugin : public IPluginV2IOExt {
     int enqueue(
         int batchSize, const void* const* inputs, void* const* outputs,
         void* workspace, cudaStream_t stream) noexcept override {
-        float* dst = reinterpret_cast<float*>(outputs[0]);
-        const float* src = reinterpret_cast<const float*>(inputs[0]);
         // std::cout << *this;
-        Convolution(
-            dst, src, mInputChannel, mOutputChannel, mH, mW, mKernelH, mKernelW,
-            mStrideH, mStrideW, mPadH, mPadW, (float*)mKernelWeights.values,
-            (float*)mBiasWeights.values, stream);
+        if (mType == (int)DataType::kFLOAT) {
+            float* dst = reinterpret_cast<float*>(outputs[0]);
+            const float* src = reinterpret_cast<const float*>(inputs[0]);
+            Convolution(
+                dst, src, mInputChannel, mOutputChannel, mH, mW, mKernelH,
+                mKernelW, mStrideH, mStrideW, mPadH, mPadW,
+                (float*)mKernelWeights.values, (float*)mBiasWeights.values,
+                stream);
+        } else {
+            int8_t* dst = reinterpret_cast<int8_t*>(outputs[0]);
+            const int8_t* src = reinterpret_cast<const int8_t*>(inputs[0]);
+            ConvolutionInt8(
+                dst, src, mInputScale, mOutputScale, mInputChannel,
+                mOutputChannel, mH, mW, mKernelH, mKernelW, mStrideH, mStrideW,
+                mPadH, mPadW, (float*)mKernelWeights.values,
+                (float*)mBiasWeights.values, stream);
+        }
+
         return 0;
     }
 
     size_t getSerializationSize() const noexcept override {
-        return (12 + mKernelWeights.count + mBiasWeights.count) * 4;
+        return (12 + 3 + mKernelWeights.count + mBiasWeights.count) * 4;
     }
 
     void serialize(void* buffer) const noexcept override {
@@ -132,17 +151,23 @@ class ConvolutionPlugin : public IPluginV2IOExt {
         ((int*)buffer)[9] = mPadW;
         ((int*)buffer)[10] = mKernelWeights.count;
         ((int*)buffer)[11] = mBiasWeights.count;
+        ((int*)buffer)[12] = mType;
+        ((int*)buffer)[13] = mInputScale;
+        ((int*)buffer)[14] = mOutputScale;
         memcpy(
-            ((int*)buffer) + 12, mKernelWeights.values,
+            ((int*)buffer) + 15, mKernelWeights.values,
             mKernelWeights.count * 4);
         memcpy(
-            ((int*)buffer) + 12 + mKernelWeights.count, mBiasWeights.values,
+            ((int*)buffer) + 15 + mKernelWeights.count, mBiasWeights.values,
             mBiasWeights.count * 4);
     }
 
     void configurePlugin(
         const PluginTensorDesc* in, int nbInput, const PluginTensorDesc* out,
         int nbOutput) noexcept override {
+        mType = (int)in[0].type;
+        mInputScale = in[0].scale;
+        mOutputScale = out[0].scale;
         auto dims = in[0].dims;
         mInputChannel = dims.d[0];
         mH = dims.d[1];
@@ -152,8 +177,12 @@ class ConvolutionPlugin : public IPluginV2IOExt {
     bool supportsFormatCombination(
         int pos, const PluginTensorDesc* inOut, int nbInputs,
         int nbOutputs) const noexcept override {
+        // std::cout << (int)inOut[pos].format << " " << (int)inOut[pos].type
+        //           << " " << (int)inOut[0].type << std::endl;
         return inOut[pos].format == TensorFormat::kLINEAR &&
-               inOut[pos].type == DataType::kFLOAT;
+               (inOut[pos].type == DataType::kFLOAT ||
+                inOut[pos].type == DataType::kINT8) &&
+               inOut[pos].type == inOut[0].type;
     }
     DataType getOutputDataType(
         int index, const DataType* inputTypes,
@@ -197,6 +226,7 @@ class ConvolutionPlugin : public IPluginV2IOExt {
                 << " kernel: " << c.mKernelH << " " << c.mKernelW
                 << " stride: " << c.mStrideH << " " << c.mStrideW
                 << " pad: " << c.mPadH << " " << c.mPadW
+                << " type: " << c.mType << " scale: " << c.mInputScale << " " << c.mOutputScale
                 << std::endl
         );
         // clang-format on
@@ -215,6 +245,9 @@ class ConvolutionPlugin : public IPluginV2IOExt {
     int mStrideW;
     int mPadH;
     int mPadW;
+    int mType;
+    int mInputScale;
+    int mOutputScale;
     std::string mNamespace;
 };
 
