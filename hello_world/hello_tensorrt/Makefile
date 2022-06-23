@@ -20,6 +20,8 @@ CUDA_OBJ := $(patsubst %.cu,%.o,${CUDA_KERNEL_SRC})
 %.o:%.cu
 	nvcc -c $^ -o $@
 
+.PRECIOUS: ${CUDA_OBJ}
+
 %.elf:%.o ${CUDA_OBJ}
 	gcc $^ ${LDFLAGS} ${LDLIBS} -o $@
 
@@ -27,4 +29,4 @@ ${RUN_APP}:run_%.elf:%.elf
 	LD_LIBRARY_PATH="/home/sunway/source/TensorRT/build/out:/opt/anaconda3/envs/cuda-11/lib64:/opt/anaconda3/envs/cuda-11/lib"  ./$<
 
 clean:
-	rm ${OBJ} ${APP} ${DEP}
+	rm ${OBJ} ${APP} ${DEP} ${CUDA_OBJ}
