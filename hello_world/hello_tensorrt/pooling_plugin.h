@@ -64,6 +64,7 @@ class PoolingPlugin : public IPluginV2IOExt {
     int getNbOutputs() const noexcept override { return 1; }
 
     // NOTE: NCHW format
+    static int ceil(int a, int b) { return a / b + (a % b > 0); }
     Dims getOutputDimensions(
         int index, const Dims* inputs, int nbInputDims) noexcept override {
         int channel = inputs->d[0];
@@ -74,8 +75,8 @@ class PoolingPlugin : public IPluginV2IOExt {
         outputDims.nbDims = 3;
         outputDims.d[0] = channel;
         // NOTE: caffe pooling padding is always symmetric
-        outputDims.d[1] = (h + 2 * mPadH - mKernelH) / mStrideH + 1;
-        outputDims.d[2] = (w + 2 * mPadW - mKernelW) / mStrideW + 1;
+        outputDims.d[1] = ceil(h + 2 * mPadH - mKernelH, mStrideH) + 1;
+        outputDims.d[2] = ceil(w + 2 * mPadW - mKernelW, mStrideW) + 1;
         return outputDims;
     }
 
@@ -181,6 +182,21 @@ class PoolingPlugin : public IPluginV2IOExt {
     }
     bool canBroadcastInputAcrossBatch(int inputIndex) const noexcept override {
         return false;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const PoolingPlugin& c) {
+        // clang-format off
+        return (os
+                << " channel: " << c.mChannel
+                << " h: " << c.mH
+                << " w: " << c.mW
+                << " kernel: " << c.mKernelH << " " << c.mKernelW
+                << " stride: " << c.mStrideH << " " << c.mStrideW
+                << " pad: " << c.mPadH << " " << c.mPadW
+                << " method: " << c.mMethod
+                << std::endl
+        );
+        // clang-format on
     }
 
    private:

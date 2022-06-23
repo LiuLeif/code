@@ -56,8 +56,10 @@ class ReluPlugin : public IPluginV2IOExt {
     bool supportsFormatCombination(
         int pos, const PluginTensorDesc* inOut, int nbInputs,
         int nbOutputs) const noexcept override {
-        return inOut[pos].type == DataType::kFLOAT;
+        return inOut[pos].type == DataType::kFLOAT &&
+               inOut[pos].format == inOut[0].format;
     }
+
     DataType getOutputDataType(
         int index, const DataType* inputTypes,
         int nbInputs) const noexcept override {
