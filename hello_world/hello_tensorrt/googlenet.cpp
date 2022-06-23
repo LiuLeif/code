@@ -153,7 +153,7 @@ bool SampleGoogleNet::infer() {
     cudaStreamSynchronize(stream);
     cudaStreamDestroy(stream);
     printf("output:\n");
-    for (int i = 0; i < outputSize; i++) {
+    for (int i = 0; i < std::min<int>(outputSize, 16); i++) {
         std::cout << ((float*)hostOutputBuffer)[i] << " ";
     }
     std::cout << std::endl;
@@ -161,11 +161,11 @@ bool SampleGoogleNet::infer() {
 }
 
 int main(int argc, char** argv) {
-    // REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
-    // REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
-    // REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
-    // REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
     // REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
 
     SampleGoogleNet sample;
