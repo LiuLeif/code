@@ -102,6 +102,10 @@ bool SampleGoogleNet::constructNetwork(
         "model/googlenet.prototxt", "model/googlenet.caffemodel", *network,
         nvinfer1::DataType::kFLOAT);
 
+    // network->markOutput(*blobNameToTensor->find("pool1/3x3_s2"));
+    // network->markOutput(*blobNameToTensor->find("pool2/3x3_s2"));
+    // network->markOutput(*blobNameToTensor->find("inception_3a/pool"));
+    // network->markOutput(*blobNameToTensor->find("inception_3a/pool"));
     network->markOutput(*blobNameToTensor->find("prob"));
 
     return true;
@@ -149,7 +153,7 @@ bool SampleGoogleNet::infer() {
     cudaStreamSynchronize(stream);
     cudaStreamDestroy(stream);
     printf("output:\n");
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < outputSize; i++) {
         std::cout << ((float*)hostOutputBuffer)[i] << " ";
     }
     std::cout << std::endl;
@@ -157,10 +161,10 @@ bool SampleGoogleNet::infer() {
 }
 
 int main(int argc, char** argv) {
-    REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
-    REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
-    REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
-    // REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
+    // REGISTER_TENSORRT_PLUGIN(SoftmaxPluginCreator);
+    // REGISTER_TENSORRT_PLUGIN(PowerPluginCreator);
+    // REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
     // REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
     // REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
 
