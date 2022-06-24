@@ -5,40 +5,51 @@ __global__ void ConvKernel(
     int8_t* dst, const int8_t* src, int input_scale, int output_scale,
     int input_channel, int output_channel, int h, int w, int kernel_h,
     int kernel_w, int stride_h, int stride_w, int output_h, int output_w,
-    float* kernel, float* bias) {
-    int output_x = blockIdx.x * blockDim.x + threadIdx.x;
-    int output_y = blockIdx.y * blockDim.y + threadIdx.y;
-    int output_c = threadIdx.z;
+    int padding_h, int padding_w, float* kernel, float* bias) {
+    int global_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (output_c >= output_channel || output_x >= output_h ||
+    int channel = global_id / output_h / output_w;
+    int output_x = global_id % (output_h * output_w) / output_w;
+    int output_y = global_id % (output_h * output_w) % output_w;
+
+    if (channel >= output_channel || output_x >= output_h ||
         output_y >= output_w) {
         return;
     }
     // input channel: 1 output channel: 20 h: 28 w: 28 kernel: 5 5 stride: 1 1
     // NCHW
-    float sum = bias[output_c];
+    // input channel: 1 output channel: 20 h: 28 w: 28 kernel: 5 5 stride: 1 1
+    // NCHW
+    float sum = bias[channel];
     for (int k = 0; k < input_channel; k++) {
         for (int i = 0; i < kernel_h; i++) {
             for (int j = 0; j < kernel_w; j++) {
-                float src_value =
-                    src[k * h * w + (output_x * stride_h + i) * w +
-                        (output_y * stride_w + j)];
+                int orig_x = output_x * stride_h + i;
+                int orig_y = output_y * stride_w + j;
+
+                float src_value = 0.0;
+                if (orig_x >= padding_h && orig_x < padding_h + h &&
+                    orig_y >= padding_w && orig_y < padding_w + w) {
+                    src_value =
+                        src[k * h * w + (orig_x - padding_h) * w + orig_y -
+                            padding_w];
+                }
                 // OIHW
                 float kernel_value = kernel
-                    [output_c * input_channel * kernel_h * kernel_w +
+                    [channel * input_channel * kernel_h * kernel_w +
                      k * kernel_h * kernel_w + i * kernel_w + j];
                 sum += (float)src_value / input_scale * kernel_value;
             }
         }
     }
-    dst[output_c * output_h * output_w + output_x * output_w + output_y] =
+    dst[channel * output_h * output_w + output_x * output_w + output_y] =
         (int)(sum * output_scale);
 }
 
 void ConvolutionInt8(
     int8_t* dst, const int8_t* src, int input_scale, int output_scale,
     int input_channel, int output_channel, int h, int w, int kernel_h,
-    int kernel_w, int stride_h, int stride_w, int pad_h, int pad_w,
+    int kernel_w, int stride_h, int stride_w, int padding_h, int padding_w,
     float* kernel, float* bias, cudaStream_t stream) {
     float* kernelWeights;
     float* biasWeights;
@@ -54,15 +65,13 @@ void ConvolutionInt8(
         cudaMemcpyHostToDevice);
     cudaMemcpy(biasWeights, bias, output_channel * 4, cudaMemcpyHostToDevice);
 
-    int output_h = (h - kernel_h) / stride_h + 1;
-    int output_w = (w - kernel_w) / stride_w + 1;
+    // NOTE: `floor` for convolution
+    int output_h = (h - kernel_h + 2 * padding_h) / stride_h + 1;
+    int output_w = (w - kernel_w + 2 * padding_w) / stride_w + 1;
 
-    int block_x = output_h + 1;
-    int block_y = output_w + 1;
-
-    ConvKernel<<<
-        dim3(block_x, block_y), dim3(1, 1, output_channel), 0, stream>>>(
+    int total_size = output_channel * output_h * output_w;
+    ConvKernel<<<(int)(total_size / 128) + 1, 128, 0, stream>>>(
         dst, src, input_scale, output_scale, input_channel, output_channel, h,
         w, kernel_h, kernel_w, stride_h, stride_w, output_h, output_w,
-        kernelWeights, biasWeights);
+        padding_h, padding_w, kernelWeights, biasWeights);
 }

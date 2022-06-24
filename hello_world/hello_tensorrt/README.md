@@ -17,3 +17,9 @@ copy {lib,include} of {cuda,cudnn,tensorrt} to some place, e.g
 make run\_mnist
 
 make run\_googlenet
+
+# run with int8
+
+1.  turn on `CPPFLAGS += -DINT8` in Makefile
+2.  make clean
+3.  make run\_mnist

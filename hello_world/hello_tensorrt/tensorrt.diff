@@ -1,8 +1,8 @@
 diff --git a/parsers/caffe/caffeParser/caffeParser.cpp b/parsers/caffe/caffeParser/caffeParser.cpp
-index 61d7dce..237ade7 100644
+index 61d7dce..33f22d5 100644
 --- a/parsers/caffe/caffeParser/caffeParser.cpp
 +++ b/parsers/caffe/caffeParser/caffeParser.cpp
-@@ -309,6 +309,142 @@ std::vector<nvinfer1::PluginField> CaffeParser::parseRPROIParam(const trtcaffe::
+@@ -309,6 +309,158 @@ std::vector<nvinfer1::PluginField> CaffeParser::parseRPROIParam(const trtcaffe::
      return f;
  }
  
@@ -111,8 +111,24 @@ index 61d7dce..237ade7 100644
 +
 +    int *stride_h = allocMemory<int>();
 +    int *stride_w = allocMemory<int>();
-+    *stride_h = p.has_stride_h() ? p.stride_h() : p.stride(0);
-+    *stride_w = p.has_stride_w() ? p.stride_w() : p.stride(0);
++    *stride_h = 1;
++    *stride_w = 1;
++    if (p.has_stride_h())
++    {
++        *stride_h = p.stride_h();
++    }
++    else if (p.stride_size() != 0)
++    {
++        *stride_h = p.stride(0);
++    }
++    if (p.has_stride_w())
++    {
++        *stride_w = p.stride_w();
++    }
++    else if (p.stride_size() != 0)
++    {
++        *stride_w = p.stride(0);
++    }
 +    f.emplace_back("stride_h", stride_h, PluginFieldType::kINT32, 1);
 +    f.emplace_back("stride_w", stride_w, PluginFieldType::kINT32, 1);
 +
@@ -145,7 +161,7 @@ index 61d7dce..237ade7 100644
  const IBlobNameToTensor* CaffeParser::parseBuffers(const uint8_t* deployBuffer,
                                                     std::size_t deployLength,
                                                     const uint8_t* modelBuffer,
-@@ -498,6 +634,34 @@ const IBlobNameToTensor* CaffeParser::parse(INetworkDefinition& network,
+@@ -498,6 +650,34 @@ const IBlobNameToTensor* CaffeParser::parse(INetworkDefinition& network,
                      pluginName = "RPROI_TRT";
                      f = parseRPROIParam(layerMsg, weights, *mBlobNameToTensor);
                  }

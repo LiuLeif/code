@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
     REGISTER_TENSORRT_PLUGIN(ReluPluginCreator);
     REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
     REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
-    // REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
 
     SampleGoogleNet sample;
     sample.build();

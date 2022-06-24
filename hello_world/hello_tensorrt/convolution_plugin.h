@@ -1,4 +1,6 @@
 // 2022-06-14 10:53
+#include <assert.h>
+
 #include <cstring>
 #include <iostream>
 #include <numeric>
@@ -89,6 +91,12 @@ class ConvolutionPlugin : public IPluginV2IOExt {
    public:
     int getNbOutputs() const noexcept override { return 1; }
 
+    static int floor(int a, int b) {
+        assert(a >= 0);
+        assert(b > 0);
+        return a / b;
+    }
+
     Dims getOutputDimensions(
         int index, const Dims* inputs, int nbInputDims) noexcept override {
         int channel = inputs->d[0];
@@ -98,8 +106,10 @@ class ConvolutionPlugin : public IPluginV2IOExt {
         Dims3 outputDims;
         outputDims.nbDims = 3;
         outputDims.d[0] = mOutputChannel;
-        outputDims.d[1] = (h + 2 * mPadH - mKernelH) / mStrideH + 1;
-        outputDims.d[2] = (w + 2 * mPadW - mKernelW) / mStrideW + 1;
+        // NOTE: `floor` for convolution
+        outputDims.d[1] = floor(h + 2 * mPadH - mKernelH, mStrideH) + 1;
+        outputDims.d[2] = floor(w + 2 * mPadW - mKernelW, mStrideW) + 1;
+
         return outputDims;
     }
 

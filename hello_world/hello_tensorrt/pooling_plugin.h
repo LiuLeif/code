@@ -1,4 +1,5 @@
 // 2022-06-14 10:53
+#include <assert.h>
 #include <unistd.h>
 
 #include <iostream>
@@ -64,7 +65,12 @@ class PoolingPlugin : public IPluginV2IOExt {
     int getNbOutputs() const noexcept override { return 1; }
 
     // NOTE: NCHW format
-    static int ceil(int a, int b) { return a / b + (a % b > 0); }
+    static int ceil(int a, int b) {
+        assert(a >= 0);
+        assert(b > 0);
+        return a / b + (a % b > 0);
+    }
+
     Dims getOutputDimensions(
         int index, const Dims* inputs, int nbInputDims) noexcept override {
         int channel = inputs->d[0];
@@ -75,6 +81,7 @@ class PoolingPlugin : public IPluginV2IOExt {
         outputDims.nbDims = 3;
         outputDims.d[0] = channel;
         // NOTE: caffe pooling padding is always symmetric
+        // NOTE: `ceil` for pooling by default
         outputDims.d[1] = ceil(h + 2 * mPadH - mKernelH, mStrideH) + 1;
         outputDims.d[2] = ceil(w + 2 * mPadW - mKernelW, mStrideW) + 1;
         return outputDims;
