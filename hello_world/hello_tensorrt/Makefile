@@ -7,7 +7,7 @@ LDLIBS := -lnvcaffeparser -lnvinfer -lnvinfer_plugin -lcudnn -lcudart -lstdc++ -
 SRC := $(wildcard *.cpp)
 OBJ := $(patsubst %.cpp,%.o,${SRC})
 APP := $(patsubst %.cpp,%.elf,${SRC})
-RUN_APP := $(patsubst %.cpp,run_%.elf,${SRC})
+RUN_APP := $(patsubst %.cpp,run-%,${SRC})
 
 all: ${APP}
 
@@ -25,7 +25,7 @@ CUDA_OBJ := $(patsubst %.cu,%.o,${CUDA_KERNEL_SRC})
 %.elf:%.o ${CUDA_OBJ}
 	gcc $^ ${LDFLAGS} ${LDLIBS} -o $@
 
-${RUN_APP}:run_%.elf:%.elf
+${RUN_APP}:run-%:%.elf
 	LD_LIBRARY_PATH="/home/sunway/source/TensorRT/build/out:/opt/anaconda3/envs/cuda-11/lib64:/opt/anaconda3/envs/cuda-11/lib"  ./$<
 
 clean:
