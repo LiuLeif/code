@@ -1,8 +1,5 @@
 # install cuda, cudnn, tensorrt
 
-copy {lib,include} of {cuda,cudnn,tensorrt} to some place, e.g
-/opt/anaconda3/envs/cuda-11/{include,lib}
-
 # patch tensorrt
 
 1.  git clone https://github.com/NVIDIA/TensorRT/, checkout to
