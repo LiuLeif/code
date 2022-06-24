@@ -2,11 +2,13 @@
 #include <stdio.h>
 
 __global__ void Max(
-    float* dst, const float* src, int h, int w, int kernel_h, int kernel_w,
-    int stride_h, int stride_w, int output_h, int output_w, int padding_h,
-    int padding_w) {
+    int total_size, float* dst, const float* src, int h, int w, int kernel_h,
+    int kernel_w, int stride_h, int stride_w, int output_h, int output_w,
+    int padding_h, int padding_w) {
     int global_id = blockIdx.x * blockDim.x + threadIdx.x;
-
+    if (global_id >= total_size) {
+        return;
+    }
     int channel = global_id / output_h / output_w;
     int output_x = global_id % (output_h * output_w) / output_w;
     int output_y = global_id % (output_h * output_w) % output_w;
@@ -32,11 +34,14 @@ __global__ void Max(
 }
 
 __global__ void Average(
-    float* dst, const float* src, int h, int w, int kernel_h, int kernel_w,
-    int stride_h, int stride_w, int output_h, int output_w, int padding_h,
-    int padding_w) {
+    int total_size, float* dst, const float* src, int h, int w, int kernel_h,
+    int kernel_w, int stride_h, int stride_w, int output_h, int output_w,
+    int padding_h, int padding_w) {
     int global_id = blockIdx.x * blockDim.x + threadIdx.x;
 
+    if (global_id >= total_size) {
+        return;
+    }
     int channel = global_id / output_h / output_w;
     int output_x = global_id % (output_h * output_w) / output_w;
     int output_y = global_id % (output_h * output_w) % output_w;
@@ -76,11 +81,11 @@ void Pooling(
 
     if (method == 0) {
         Max<<<(int)(total_size / 128) + 1, 128, 0, stream>>>(
-            dst, src, h, w, kernel_h, kernel_w, stride_h, stride_w, output_h,
-            output_w, padding_h, padding_w);
+            total_size, dst, src, h, w, kernel_h, kernel_w, stride_h, stride_w,
+            output_h, output_w, padding_h, padding_w);
     } else if (method == 1) {
         Average<<<(int)(total_size / 128) + 1, 128, 0, stream>>>(
-            dst, src, h, w, kernel_h, kernel_w, stride_h, stride_w, output_h,
-            output_w, padding_h, padding_w);
+            total_size, dst, src, h, w, kernel_h, kernel_w, stride_h, stride_w,
+            output_h, output_w, padding_h, padding_w);
     }
 }

@@ -15,6 +15,7 @@
 #include "NvInferPlugin.h"
 #include "convolution_plugin.h"
 #include "inner_product_plugin.h"
+#include "lrn_plugin.h"
 #include "opencv2/imgproc.hpp"
 #include "pooling_plugin.h"
 #include "power_plugin.h"
@@ -167,6 +168,7 @@ int main(int argc, char** argv) {
     REGISTER_TENSORRT_PLUGIN(PoolingPluginCreator);
     REGISTER_TENSORRT_PLUGIN(InnerProductPluginCreator);
     REGISTER_TENSORRT_PLUGIN(ConvolutionPluginCreator);
+    REGISTER_TENSORRT_PLUGIN(LRNPluginCreator);
 
     SampleGoogleNet sample;
     sample.build();
