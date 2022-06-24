@@ -14,7 +14,7 @@ all: ${APP}
 DEP := $(OBJ:.o=.d)
 -include ${DEP}
 
-CUDA_KERNEL_SRC:=$(wildcard *.cu)
+CUDA_KERNEL_SRC:=$(wildcard kernel/*.cu)
 CUDA_OBJ := $(patsubst %.cu,%.o,${CUDA_KERNEL_SRC})
 
 %.o:%.cu

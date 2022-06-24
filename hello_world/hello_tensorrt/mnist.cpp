@@ -11,12 +11,12 @@
 #include "NvCaffeParser.h"
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
-#include "convolution_plugin.h"
-#include "inner_product_plugin.h"
-#include "pooling_plugin.h"
-#include "power_plugin.h"
-#include "relu_plugin.h"
-#include "softmax_plugin.h"
+#include "kernel/convolution_plugin.h"
+#include "kernel/inner_product_plugin.h"
+#include "kernel/pooling_plugin.h"
+#include "kernel/power_plugin.h"
+#include "kernel/relu_plugin.h"
+#include "kernel/softmax_plugin.h"
 
 using namespace nvinfer1;
 
