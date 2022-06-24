@@ -7,6 +7,9 @@ __global__ void LRN(
     float alpha, float beta) {
     int global_id = blockIdx.x * blockDim.x + threadIdx.x;
 
+    if (global_id >= channel * h * w) {
+        return;
+    }
     //  channel: 64 h: 56 w: 56 local_size: 5 alpha: 0.0001 beta: 0.75
     int output_channel = global_id / h / w;
     int output_x = global_id % (h * w) / w;
